@@ -2,13 +2,40 @@
 └── 📁broker-backend
     └── 📁app
         └── 📁api
+            └── 📁public
+                ├── __init__.py
+                ├── auth.py
+                ├── favorites.py
+            ├── __init__.py
+            ├── routes.py
         └── 📁core
+            ├── __init__.py
             ├── config.py
+            ├── database.py
+            ├── security.py
+        └── 📁domains
+            └── 📁favorites
+                ├── __init__.py
+                ├── model.py
+                ├── schema.py
+                ├── service.py
+            └── 📁users
+                ├── __init__.py
+                ├── model.py
+                ├── schema.py
+                ├── service.py
+            ├── __init__.py
+        └── 📁middleware
+            ├── __init__.py
+            ├── error_handler.py
+        └── 📁utils
+            ├── __init__.py
+            ├── deps.py
+        ├── __init__.py
         ├── main.py
-    └── 📁model
-    └── 📁schema
     ├── .gitignore
     ├── .python-version
+    ├── folderstr.md
     ├── pyproject.toml
     ├── README.md
     └── uv.lock

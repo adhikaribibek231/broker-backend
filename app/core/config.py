@@ -19,7 +19,7 @@ class Settings(BaseSettings):
             raise ValueError(f"Invalid log level: {v}")
         return level
     
-    database_url:str = Field(alias = "DATABASE_URL")
+    database_url:str = Field(default="sqlite:///./app.db",alias = "DATABASE_URL")
     database_connect_timeout: int = Field(default=5, alias = "DATABASE_CONNECT_TIMEOUT")
     auto_create_schema: bool = Field(default=True, alias ="AUTO_CREATE_SCHEMA")
     @field_validator("database_url")
