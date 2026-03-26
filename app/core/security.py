@@ -15,7 +15,7 @@ def create_access_token(*, sub: str, claims: dict | None =None)->str:
     if claims:
         payload.update(claims)
 
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=[settings.jwt_algorithm])
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 def decode_token(token:str) -> dict:
     return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
