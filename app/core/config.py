@@ -37,6 +37,12 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_CONNECT_TIMEOUT must be greater than 0")
         return v
     
+    jwt_secret_key:str = Field(alias = "JWT_SECRET_KEY")
+    jwt_algorithm: str = Field(default="HS256", alias = "JWT_ALGORITHM")
+    access_token_expire_minutes: int = Field(default=15, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
+    refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
+
+    
 settings = Settings()
 
 LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
