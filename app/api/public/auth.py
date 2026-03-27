@@ -41,7 +41,8 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenPairRespons
 
     access_token = create_access_token(sub=str(user.id),
                                        claims={"role": user.role,
-                                               "email": user.email
+                                               "email": user.email,
+                                               "token_version": user.token_version,
                                                })
     refresh_token = issue_refresh_token(db, user.id)
 
@@ -66,7 +67,8 @@ def refresh(payload: RefreshTokenIn, db: Session = Depends(get_db)) -> TokenPair
     new_access_token = create_access_token(sub=str(user.id),
                                            claims={
                                                "role": user.role,
-                                               "email": user.email
+                                               "email": user.email,
+                                               "token_version": user.token_version,
                                                })
     
     new_refresh_token = rotate_refresh_token(db, row)
@@ -80,11 +82,18 @@ def logout(payload: RefreshTokenIn, db: Session = Depends(get_db)) -> Response:
     logger.debug("Logout request received")
 
     row = find_refresh_token(db, payload.refresh_token)
-    if row and is_refresh_token_valid(row):
-        revoke_refresh_token(db, row)
-        logger.info("Logout successful: user_id=%s", row.user_id)
-    else:
-        logger.debug("Logout skipped: token not found or already invalid")
+    if not row or not is_refresh_token_valid(row):
+        logger.warning("Logout failed: invalid refresh token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    user = get_user_by_id(db, row.user_id)
+    if not user:
+        logger.warning("Logout failed: unknown user_id=%s", row.user_id)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    user.token_version += 1
+    revoke_refresh_token(db, row)
+    logger.info("Logout successful: user_id=%s", row.user_id)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -92,4 +101,3 @@ def logout(payload: RefreshTokenIn, db: Session = Depends(get_db)) -> Response:
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
-

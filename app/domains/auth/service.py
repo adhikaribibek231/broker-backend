@@ -35,7 +35,11 @@ def is_refresh_token_valid(row: RefreshToken) -> bool:
     if row.revoked:
         logger.debug("Refresh token invalid: revoked token_id=%s user_id=%s", row.id, row.user_id)
         return False
-    if row.expires_at <= datetime.now(timezone.utc):
+    expires_at = row.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at <= datetime.now(timezone.utc):
         logger.debug("Refresh token invalid: expired token_id=%s user_id=%s", row.id, row.user_id)
         return False
     return True

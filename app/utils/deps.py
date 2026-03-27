@@ -38,10 +38,26 @@ def get_current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer
             "Authentication failed: JWT subject claim not an integer: sub=%s",sub)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid token")
 
+    token_version = claims.get("token_version", 0)
+    try:
+        token_version = int(token_version)
+    except (TypeError, ValueError):
+        logger.warning("Authentication failed: invalid token version claim")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid token")
+
     user = get_user_by_id(db, user_id)
     if not user:
         logger.warning("Authentication failed: unknown user_id=%s", user_id)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid token")
+
+    if token_version != user.token_version:
+        logger.warning(
+            "Authentication failed: token version mismatch user_id=%s token_version=%s current_version=%s",
+            user_id,
+            token_version,
+            user.token_version,
+        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid or expired token")
     
     return user
 
