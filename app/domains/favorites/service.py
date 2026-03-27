@@ -23,7 +23,7 @@ def list_favorites_for_user(db: Session, user_id: int) -> list[Favorite]:
 
 def add_favorite(db: Session, user_id: int, property_id: int) -> Favorite:
     property_obj = get_property_by_id(db, property_id)
-    if property_id is None:
+    if property_obj is None:
         raise ValueError("Property not found")
 
     if get_favorite(db, user_id, property_id):
