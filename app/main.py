@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-
+from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.routes import router
 
@@ -21,7 +21,6 @@ def create_app():
             from app.domains.users import model as _users_model
             from app.domains.favorites import model as _fav_model
 
-            # 🔹 Check DB connection
             logger.info("Checking database connectivity")
             start = perf_counter()
 
@@ -44,7 +43,7 @@ def create_app():
             engine.dispose()
 
     app = FastAPI(
-        title="Broker Buyer Portal API",
+        title=settings.app_display_name,
         lifespan=lifespan,
     )
 
