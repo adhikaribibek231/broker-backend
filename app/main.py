@@ -10,7 +10,7 @@ from sqlalchemy import inspect, text
 
 from app.api.routes import router
 from app.core.config import configure_logging, settings
-from app.core.database import Base, engine, SessionLocal
+from app.core.database import Base, engine
 
 
 def load_models() -> None:
@@ -25,15 +25,6 @@ def ensure_user_token_version_column() -> None:
         columns = {column["name"] for column in inspect(conn).get_columns("users")}
         if "token_version" not in columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
-
-def seed_initial_data() -> None:
-    from app.domains.properties.service import seed_properties
-
-    db = SessionLocal()
-    try:
-        seed_properties(db)
-    finally:
-        db.close()
 
 def _log_timed_step(logger: logging.Logger, message: str, fn) -> None:
     started_at = perf_counter()
@@ -65,7 +56,6 @@ def create_app() -> FastAPI:
                 _log_timed_step(logger, "Database schema ensured", _ensure_schema)
             else:
                 logger.info("AUTO_CREATE_SCHEMA disabled, skipping schema sync")
-            _log_timed_step(logger, "Seeded initial data", seed_initial_data)
             yield
         except Exception:
             logger.exception("Application startup failed")
