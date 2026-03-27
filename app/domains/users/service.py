@@ -1,29 +1,35 @@
-from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
 
+from app.core.security import hash_password, verify_password
 from app.domains.users.model import User
 from app.domains.users.schema import UserCreate
-from app.core.security import hash_password, verify_password
+
+
+def _normalize_email(email: str) -> str:
+    return email.lower().strip()
+
+
+def _normalize_username(username: str) -> str:
+    return username.lower().strip()
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
-    return db.query(User).filter(User.id == user_id).first()
+    return db.get(User, user_id)
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
-    normalized_email = email.lower().strip()
-    return db.query(User).filter(User.email == normalized_email).first()
+    return db.query(User).filter(User.email == _normalize_email(email)).first()
 
 
 def get_user_by_username(db: Session, username: str) -> User | None:
-    normalized_username = username.strip()
-    return db.query(User).filter(User.username == normalized_username).first()
+    return db.query(User).filter(User.username == _normalize_username(username)).first()
 
 
 def create_user(db: Session, user_data: UserCreate) -> User:
     normalized_name = user_data.name.strip()
-    normalized_username = user_data.username.strip()
-    normalized_email = user_data.email.lower().strip()
+    normalized_username = _normalize_username(user_data.username)
+    normalized_email = _normalize_email(user_data.email)
 
     existing_user = db.query(User).filter(
         or_(
@@ -31,7 +37,6 @@ def create_user(db: Session, user_data: UserCreate) -> User:
             User.username == normalized_username,
         )
     ).first()
-
     if existing_user:
         if existing_user.email == normalized_email:
             raise ValueError("Email already registered")
@@ -44,7 +49,6 @@ def create_user(db: Session, user_data: UserCreate) -> User:
         password_hash=hash_password(user_data.password),
         role="buyer",
     )
-
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -53,11 +57,6 @@ def create_user(db: Session, user_data: UserCreate) -> User:
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
     user = get_user_by_email(db, email)
-
-    if user is None:
-        return None
-
-    if not verify_password(password, user.password_hash):
-        return None
-
-    return user
+    if user and verify_password(password, user.password_hash):
+        return user
+    return None

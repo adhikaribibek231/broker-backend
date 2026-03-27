@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
+
 class RefreshTokenIn(BaseModel):
     refresh_token: str
+
 
 class TokenPairResponse(BaseModel):
     access_token: str

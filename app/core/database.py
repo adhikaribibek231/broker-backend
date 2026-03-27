@@ -1,6 +1,8 @@
+from collections.abc import Iterator
+
 from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
@@ -8,24 +10,21 @@ from app.core.config import settings
 class Base(DeclarativeBase):
     pass
 
-url = make_url(settings.database_url)
+
 engine_kwargs = {"pool_pre_ping": True}
-if url.drivername.startswith("sqlite"):
-    engine_kwargs["connect_args"] = {
-        "check_same_thread": False,
-    }
+if make_url(settings.database_url).drivername.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
 
 try:
     engine = create_engine(settings.database_url, **engine_kwargs)
 except Exception as exc:
-    raise RuntimeError(
-        "Failed to initialize database engine from DATABASE_URL"
-    ) from exc
+    raise RuntimeError("Failed to initialize database engine from DATABASE_URL") from exc
 
 
-SessionLocal = sessionmaker(bind=engine,autoflush=False,autocommit=False)
+SessionLocal = sessionmaker(bind=engine, autoflush=False)
 
-def get_db():
+
+def get_db() -> Iterator[Session]:
     db = SessionLocal()
     try:
         yield db

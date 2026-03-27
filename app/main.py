@@ -1,71 +1,68 @@
 import logging
-from time import perf_counter
 from contextlib import asynccontextmanager
+from time import perf_counter
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
-from app.core.config import settings, configure_logging
-from app.core.database import engine, Base
+
 from app.api.routes import router
+from app.core.config import configure_logging, settings
+from app.core.database import Base, engine
+
+
+def load_models() -> None:
+    from app.domains.auth import model  # noqa: F401
+    from app.domains.favorites import model  # noqa: F401
+    from app.domains.users import model  # noqa: F401
 
 
 def ensure_user_token_version_column() -> None:
     with engine.begin() as conn:
         columns = {column["name"] for column in inspect(conn).get_columns("users")}
         if "token_version" not in columns:
-            conn.execute(
-                text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
-            )
+            conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
 
 
-def create_app():
+def _log_timed_step(logger: logging.Logger, message: str, fn) -> None:
+    started_at = perf_counter()
+    fn()
+    logger.info("%s in %.2fs", message, perf_counter() - started_at)
+
+
+def _check_database_connection() -> None:
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+
+
+def _ensure_schema() -> None:
+    load_models()
+    Base.metadata.create_all(bind=engine)
+    ensure_user_token_version_column()
+
+
+def create_app() -> FastAPI:
     configure_logging()
     logger = logging.getLogger(__name__)
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(_: FastAPI):
         logger.info("Application startup")
-
         try:
-            logger.info("Importing orm models")
-            from app.domains.users import model as _users_model
-            from app.domains.auth import model as _auth_model
-            from app.domains.favorites import model as _favorites_model
-
-            logger.info("Checking database connectivity")
-            started_at = perf_counter()
-
-            with engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-
-            logger.info("Database OK in %.2fs", perf_counter() - started_at)
-            
+            _log_timed_step(logger, "Database OK", _check_database_connection)
             if settings.auto_create_schema:
-                logger.info("Ensuring database schema")
-                started_at= perf_counter()
-
-                Base.metadata.create_all(bind=engine)
-                ensure_user_token_version_column()
-
-                logger.info("Database schema ensured in %.2fs",perf_counter()-started_at)
+                _log_timed_step(logger, "Database schema ensured", _ensure_schema)
             else:
                 logger.info("AUTO_CREATE_SCHEMA disabled, skipping schema sync")
             yield
-
         except Exception:
-            logger.exception("Application Startup failed")
+            logger.exception("Application startup failed")
             raise
-
         finally:
             engine.dispose()
-            logger.info("Application Shutdown")
+            logger.info("Application shutdown")
 
-    app = FastAPI(
-        title=settings.app_display_name,
-        lifespan=lifespan,
-    )
-
+    app = FastAPI(title=settings.app_display_name, lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -76,9 +73,7 @@ def create_app():
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
     app.include_router(router)
-
     return app
 
 

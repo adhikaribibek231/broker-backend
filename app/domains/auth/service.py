@@ -1,11 +1,30 @@
-from datetime import datetime, timezone
 import logging
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
-from app.core.security import generate_refresh_token, hash_refresh_token, refresh_expires_at
+from app.core.security import (
+    create_access_token,
+    generate_refresh_token,
+    hash_refresh_token,
+    refresh_expires_at,
+)
 from app.domains.auth.model import RefreshToken
+from app.domains.users.model import User
+from app.domains.users.service import get_user_by_id
 
 logger = logging.getLogger(__name__)
+
+
+def issue_access_token(user: User) -> str:
+    return create_access_token(
+        sub=str(user.id),
+        claims={
+            "role": user.role,
+            "email": user.email,
+            "token_version": user.token_version,
+        },
+    )
 
 
 def issue_refresh_token(db: Session, user_id: int) -> str:
@@ -24,17 +43,32 @@ def issue_refresh_token(db: Session, user_id: int) -> str:
     logger.info("Refresh token issued: user_id=%s token_id=%s", user_id, row.id)
     return raw
 
+
 def find_refresh_token(db: Session, raw_token: str) -> RefreshToken | None:
-    h = hash_refresh_token(raw_token)
-    row = db.query(RefreshToken).filter(RefreshToken.token_hash == h).one_or_none()
+    row = db.query(RefreshToken).filter(RefreshToken.token_hash == hash_refresh_token(raw_token)).one_or_none()
     if row is None:
         logger.debug("Refresh token lookup miss")
     return row
+
+
+def get_active_refresh_session(db: Session, raw_token: str) -> tuple[RefreshToken, User] | None:
+    row = find_refresh_token(db, raw_token)
+    if row is None or not is_refresh_token_valid(row):
+        return None
+
+    user = get_user_by_id(db, row.user_id)
+    if user is None:
+        logger.warning("Refresh token orphaned: token_id=%s user_id=%s", row.id, row.user_id)
+        return None
+
+    return row, user
+
 
 def is_refresh_token_valid(row: RefreshToken) -> bool:
     if row.revoked:
         logger.debug("Refresh token invalid: revoked token_id=%s user_id=%s", row.id, row.user_id)
         return False
+
     expires_at = row.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
@@ -43,6 +77,7 @@ def is_refresh_token_valid(row: RefreshToken) -> bool:
         logger.debug("Refresh token invalid: expired token_id=%s user_id=%s", row.id, row.user_id)
         return False
     return True
+
 
 def rotate_refresh_token(db: Session, row: RefreshToken) -> str:
     logger.info("Rotating refresh token: token_id=%s user_id=%s", row.id, row.user_id)
@@ -70,10 +105,9 @@ def rotate_refresh_token(db: Session, row: RefreshToken) -> str:
     )
     return new_raw
 
-def revoke_refresh_token(db: Session, row: RefreshToken) -> None:
-    if row.revoked:
-        logger.debug("Refresh token already revoked: token_id=%s user_id=%s", row.id, row.user_id)
-        return
+
+def revoke_user_session(db: Session, row: RefreshToken, user: User) -> None:
+    user.token_version += 1
     row.revoked = True
     db.commit()
     logger.info("Refresh token revoked: token_id=%s user_id=%s", row.id, row.user_id)

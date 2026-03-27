@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.schemas import MessageResponse
 from app.domains.favorites.schema import FavoriteCreate, FavoriteResponse
 from app.domains.favorites.service import (
     add_favorite,
@@ -52,12 +53,12 @@ def create_favorite(
         )
 
 
-@router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{property_id}", response_model=MessageResponse)
 def delete_favorite(
     property_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-):
+) -> MessageResponse:
     removed = remove_favorite(db, current_user.id, property_id)
     if not removed:
         raise HTTPException(
@@ -70,3 +71,4 @@ def delete_favorite(
         current_user.id,
         property_id,
     )
+    return MessageResponse(detail="Favorite removed successfully")

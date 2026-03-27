@@ -9,13 +9,13 @@ class UserCreate(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def normalize_email(cls, v:str):
-        return v.lower()
-    
+    def normalize_email(cls, value: str) -> str:
+        return value.lower().strip()
+
     @field_validator("username")
     @classmethod
-    def normalize_username(cls, v:str):
-        return v.lower().strip()
+    def normalize_username(cls, value: str) -> str:
+        return value.lower().strip()
 
 
 class UserLogin(BaseModel):
@@ -30,5 +30,4 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: str
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
