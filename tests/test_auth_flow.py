@@ -18,10 +18,10 @@ from app.domains.properties.model import Property
 from app.domains.users.schema import UserCreate, UserLogin
 from app.utils.deps import get_current_user
 
-from app.domains.auth import model as _auth_model  # noqa: F401
-from app.domains.favorites import model as _favorites_model  # noqa: F401
-from app.domains.properties import model as _properties_model  # noqa: F401
-from app.domains.users import model as _users_model  # noqa: F401
+from app.domains.auth import model as _auth_model
+from app.domains.favorites import model as _favorites_model
+from app.domains.properties import model as _properties_model
+from app.domains.users import model as _users_model
 
 
 class AuthFlowTests(unittest.TestCase):

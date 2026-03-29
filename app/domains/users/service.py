@@ -31,6 +31,13 @@ def create_user(db: Session, user_data: UserCreate) -> User:
     normalized_username = _normalize_username(user_data.username)
     normalized_email = _normalize_email(user_data.email)
 
+    if not normalized_name:
+        raise ValueError("Name must not be blank")
+    if not normalized_username:
+        raise ValueError("Username must not be blank")
+    if len(normalized_username) < 3:
+        raise ValueError("Username must be at least 3 characters")
+
     existing_user = db.query(User).filter(
         or_(
             User.email == normalized_email,
