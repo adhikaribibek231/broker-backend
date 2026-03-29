@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routes import router
 from app.core.config import configure_logging, settings
 from app.core.database import engine
-from app.core.startup import check_database_connection, ensure_schema
+from app.core.startup import check_database_connection, ensure_property_thumbnail_urls, ensure_schema
 
 
 def _log_timed_step(logger: logging.Logger, message: str, fn) -> None:
@@ -32,6 +32,11 @@ def create_app() -> FastAPI:
                 _log_timed_step(logger, "Database schema ensured", ensure_schema)
             else:
                 logger.info("AUTO_CREATE_SCHEMA disabled, skipping schema sync")
+            updated_property_images = ensure_property_thumbnail_urls()
+            if updated_property_images:
+                logger.info("Property thumbnail URLs updated for %s records", updated_property_images)
+            else:
+                logger.info("Property thumbnail URLs already up to date")
             yield
         except Exception:
             logger.exception("Application startup failed")

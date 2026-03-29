@@ -1,6 +1,8 @@
+from pathlib import Path
+
 from sqlalchemy import inspect, text
 
-from app.core.database import Base, engine
+from app.core.database import Base, SessionLocal, engine
 
 
 def load_models() -> None:
@@ -73,6 +75,19 @@ def ensure_favorites_property_foreign_key() -> None:
             conn.execute(text("CREATE INDEX ix_favorites_property_id ON favorites (property_id)"))
         finally:
             conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
+def ensure_property_thumbnail_urls() -> int:
+    load_models()
+
+    with engine.connect() as conn:
+        if "properties" not in inspect(conn).get_table_names():
+            return 0
+
+    from app.domains.properties.images import backfill_property_thumbnail_urls
+
+    with SessionLocal() as db:
+        return backfill_property_thumbnail_urls(db, assets_root=Path("app/assets"))
 
 
 def ensure_schema() -> None:

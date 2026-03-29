@@ -7,6 +7,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from app.core.database import SessionLocal, engine
+from app.domains.properties.images import build_thumbnail_image_url
 from app.domains.properties.model import Property
 
 
@@ -16,7 +17,7 @@ SAMPLE_PROPERTIES = [
         "location": "Kathmandu",
         "price": 120000,
         "property_type": "Apartment",
-        "image_url": "/assets/properties/modern-apartment-kathmandu.jpg",
+        "image_url": build_thumbnail_image_url("/assets/properties/modern-apartment-kathmandu.jpg"),
         "description": "A modern 2-bedroom apartment in the city center.",
         "is_active": True,
     },
@@ -25,7 +26,7 @@ SAMPLE_PROPERTIES = [
         "location": "Lalitpur",
         "price": 250000,
         "property_type": "House",
-        "image_url": "/assets/properties/family-house-lalitpur.jpg",
+        "image_url": build_thumbnail_image_url("/assets/properties/family-house-lalitpur.jpg"),
         "description": "A spacious family house with parking and garden.",
         "is_active": True,
     },
@@ -34,7 +35,7 @@ SAMPLE_PROPERTIES = [
         "location": "Bhaktapur",
         "price": 80000,
         "property_type": "Studio",
-        "image_url": "/assets/properties/studio-flat-bhaktapur.jpg",
+        "image_url": build_thumbnail_image_url("/assets/properties/studio-flat-bhaktapur.jpg"),
         "description": "Compact studio flat suitable for a single buyer.",
         "is_active": True,
     },
@@ -43,7 +44,7 @@ SAMPLE_PROPERTIES = [
         "location": "Pokhara",
         "price": 500000,
         "property_type": "Villa",
-        "image_url": "/assets/properties/luxury-villa-pokhara.jpg",
+        "image_url": build_thumbnail_image_url("/assets/properties/luxury-villa-pokhara.jpg"),
         "description": "Premium villa with mountain views and large outdoor space.",
         "is_active": True,
     },
@@ -52,7 +53,7 @@ SAMPLE_PROPERTIES = [
         "location": "Butwal",
         "price": 300000,
         "property_type": "Commercial",
-        "image_url": "/assets/properties/commercial-space-butwal.jpg",
+        "image_url": build_thumbnail_image_url("/assets/properties/commercial-space-butwal.jpg"),
         "description": "Well-located commercial property for office or retail use.",
         "is_active": True,
     },
