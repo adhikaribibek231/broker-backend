@@ -51,13 +51,10 @@ def create_app() -> FastAPI:
             logger.info("Application shutdown")
 
     app = FastAPI(title=settings.app_display_name, lifespan=lifespan)
+    logger.info("Configured CORS origins: %s", settings.cors_allowed_origins)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "https://broker-frontend.vercel.app/",
-        ],
+        allow_origins=settings.cors_allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

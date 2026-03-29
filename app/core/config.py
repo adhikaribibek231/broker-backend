@@ -6,6 +6,24 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def parse_cors_allowed_origins(value: str | list[str] | tuple[str, ...] | None) -> list[str]:
+    if value is None:
+        return []
+
+    if isinstance(value, str):
+        origins = value.split(",")
+    else:
+        origins = list(value)
+
+    normalized_origins: list[str] = []
+    for origin in origins:
+        normalized_origin = origin.strip().rstrip("/")
+        if normalized_origin and normalized_origin not in normalized_origins:
+            normalized_origins.append(normalized_origin)
+
+    return normalized_origins
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -19,6 +37,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(default=15, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
+    cors_allowed_origins: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
+        alias="CORS_ALLOWED_ORIGINS",
+    )
 
     @field_validator("log_level")
     @classmethod
@@ -42,6 +67,14 @@ class Settings(BaseSettings):
         if value <= 0:
             raise ValueError("DATABASE_CONNECT_TIMEOUT must be greater than 0")
         return value
+
+    @field_validator("cors_allowed_origins", mode="before")
+    @classmethod
+    def validate_cors_allowed_origins(cls, value: str | list[str] | tuple[str, ...] | None) -> list[str]:
+        parsed_origins = parse_cors_allowed_origins(value)
+        if not parsed_origins:
+            raise ValueError("CORS_ALLOWED_ORIGINS must contain at least one origin")
+        return parsed_origins
 
 
 settings = Settings()
