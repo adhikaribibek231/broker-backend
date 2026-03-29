@@ -1,8 +1,11 @@
+import logging
 from pathlib import Path
 
 from sqlalchemy import inspect, text
 
 from app.core.database import Base, SessionLocal, engine
+
+logger = logging.getLogger(__name__)
 
 
 def load_models() -> None:
@@ -21,6 +24,7 @@ def ensure_user_token_version_column() -> None:
     with engine.begin() as conn:
         columns = {column["name"] for column in inspect(conn).get_columns("users")}
         if "token_version" not in columns:
+            logger.info("Applying schema patch: adding users.token_version column")
             conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
 
 
@@ -41,6 +45,7 @@ def ensure_favorites_property_foreign_key() -> None:
         if "properties" in foreign_tables:
             return
 
+        logger.info("Applying schema patch: rebuilding favorites table with property foreign key")
         conn.execute(text("PRAGMA foreign_keys=OFF"))
         try:
             conn.execute(

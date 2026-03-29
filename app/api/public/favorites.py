@@ -23,7 +23,13 @@ def list_my_favorites(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return list_favorites_for_user(db, current_user.id)
+    favorites = list_favorites_for_user(db, current_user.id)
+    logger.debug(
+        "Favorites listed: user_id=%s count=%s",
+        current_user.id,
+        len(favorites),
+    )
+    return favorites
 
 
 @router.post("/", response_model=FavoriteResponse, status_code=status.HTTP_201_CREATED)
@@ -61,6 +67,11 @@ def delete_favorite(
 ) -> MessageResponse:
     removed = remove_favorite(db, current_user.id, property_id)
     if not removed:
+        logger.warning(
+            "Remove favorite failed: user_id=%s property_id=%s reason=Favorite not found",
+            current_user.id,
+            property_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Favorite not found",

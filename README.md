@@ -1,6 +1,6 @@
 # Broker Backend
 
-This repository is only the backend/API part of the submission for the broker buyer portal task.
+This repository contains the backend/API for the broker buyer portal.
 
 - Frontend repository: https://github.com/adhikaribibek231/broker-frontend
 - Backend repository: https://github.com/adhikaribibek231/broker-backend
@@ -13,7 +13,7 @@ This backend is responsible for:
 - returning the logged-in user profile
 - listing properties and letting a user add/remove only their own favourites
 
-It does not include the frontend UI. Run the frontend from the separate repository above.
+The frontend UI lives in the separate repository linked above.
 
 ## Tech Stack
 
@@ -166,8 +166,6 @@ Once it starts, open:
 
 ## Example Flow
 
-The intended reviewer flow is:
-
 1. Register with `name`, `username`, `email`, and `password`.
 2. Log in with `email` and `password`.
 3. Open `My Favourites` in the dashboard.
@@ -197,5 +195,5 @@ uv run python -m unittest discover -s tests
 ## Notes
 
 - `.env` is ignored by git and should not be committed.
-- This repo is intentionally only one piece of the overall broker project.
+- This repository covers the backend/API layer of the broker portal.
 - For the UI, use the frontend repository linked at the top of this README.
