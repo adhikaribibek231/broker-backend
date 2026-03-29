@@ -95,6 +95,19 @@ def ensure_property_thumbnail_urls() -> int:
         return backfill_property_thumbnail_urls(db, assets_root=Path("app/assets"))
 
 
+def ensure_sample_properties() -> int:
+    load_models()
+
+    with engine.connect() as conn:
+        if "properties" not in inspect(conn).get_table_names():
+            return 0
+
+    from app.domains.properties.seed import seed_sample_properties
+
+    with SessionLocal() as db:
+        return seed_sample_properties(db)
+
+
 def ensure_schema() -> None:
     load_models()
     Base.metadata.create_all(bind=engine)
