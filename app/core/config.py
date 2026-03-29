@@ -1,9 +1,10 @@
+import json
 import logging
 from logging.config import dictConfig
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 def parse_cors_allowed_origins(value: str | list[str] | tuple[str, ...] | None) -> list[str]:
@@ -11,7 +12,14 @@ def parse_cors_allowed_origins(value: str | list[str] | tuple[str, ...] | None) 
         return []
 
     if isinstance(value, str):
-        origins = value.split(",")
+        raw_value = value.strip()
+        if raw_value.startswith("["):
+            parsed_value = json.loads(raw_value)
+            if not isinstance(parsed_value, list):
+                raise ValueError("CORS_ALLOWED_ORIGINS JSON value must be a list")
+            origins = parsed_value
+        else:
+            origins = raw_value.split(",")
     else:
         origins = list(value)
 
@@ -37,7 +45,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(default=15, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
-    cors_allowed_origins: list[str] = Field(
+    cors_allowed_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
