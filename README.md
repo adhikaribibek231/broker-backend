@@ -4,22 +4,31 @@ This repository contains the backend/API for the broker buyer portal.
 
 - Frontend repository: https://github.com/adhikaribibek231/broker-frontend
 - Backend repository: https://github.com/adhikaribibek231/broker-backend
+- Live frontend deployment: https://broker-frontend.vercel.app
 
 This backend is responsible for:
 
 - user registration and login
 - JWT-based authentication
-- storing users and favourites in a SQLite database
+- storing users and favourites in the application database
 - returning the logged-in user profile
 - listing properties and letting a user add/remove only their own favourites
 
 The frontend UI lives in the separate repository linked above.
 
+## Current Deployment
+
+- Frontend: https://broker-frontend.vercel.app
+- Database in use for deployment: NeonDB (managed PostgreSQL)
+
+The deployed backend uses a private NeonDB connection that is not shared in this repository. NeonDB is used in deployment because a managed PostgreSQL database is a better fit for hosted infrastructure: it provides persistent remote storage, survives redeploys, and handles production-style access more reliably than a local SQLite file. For anyone cloning this project, the documented setup still uses SQLite and works without NeonDB credentials.
+
 ## Tech Stack
 
 - FastAPI
 - SQLAlchemy
-- SQLite
+- NeonDB (PostgreSQL) in the private deployed environment
+- SQLite for shared local development setup
 - `uv` for Python/dependency management
 - JWT access tokens + DB-backed refresh tokens
 
@@ -103,12 +112,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES=15
 REFRESH_TOKEN_EXPIRE_DAYS=7
 ```
 
+The example above intentionally keeps `DATABASE_URL` on SQLite. The deployed environment uses a private NeonDB connection string, but that value is not shared and is not required to run the project locally.
+
 ### 5. What each `.env` value means
 
 - `APP_DISPLAY_NAME`: The API name shown in logs and docs.
 - `APP_ENV`: Use `dev` for local development.
 - `LOG_LEVEL`: `INFO` is a good default.
-- `DATABASE_URL`: Local SQLite database file. Keep `sqlite:///./app.db` if you want the simplest setup.
+- `DATABASE_URL`: Keep `sqlite:///./app.db` for the documented setup and simplest local run. In the private deployed environment, this is set to a NeonDB PostgreSQL connection string instead.
 - `DATABASE_CONNECT_TIMEOUT`: Database connection timeout in seconds.
 - `AUTO_CREATE_SCHEMA`: `true` lets the app create tables automatically on startup.
 - `JWT_SECRET_KEY`: A long random secret used to sign JWTs. Do not reuse a weak value.
